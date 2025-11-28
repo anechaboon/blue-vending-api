@@ -18,8 +18,8 @@ class Cash(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     # In the Cash class:
     cash_type: Mapped[CashType] = mapped_column(SQLEnum(CashType), nullable=False)
-    cash = Column(Integer, nullable=True) # (1,5,10,20,50,100,500,1000)
-    stock = Column(Integer, nullable=True)
+    cash: Mapped[int] = mapped_column(Integer, nullable=True) # (1,5,10,20,50,100,500,1000)
+    stock: Mapped[int] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
     created_by = Column(Integer, nullable=True)

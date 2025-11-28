@@ -10,8 +10,9 @@ class Product(Base):
     __tablename__ = 'product'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    title: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
-    stock = Column(Integer, nullable=True)
+    title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    sku: Mapped[str] = mapped_column(String(50), unique=True, nullable=True)
+    stock: Mapped[int] = mapped_column(Integer, nullable=True)
     price: Mapped[float] = mapped_column(nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
