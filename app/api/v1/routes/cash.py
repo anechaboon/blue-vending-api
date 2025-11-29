@@ -22,9 +22,10 @@ async def get_cashes(db: AsyncSession = Depends(get_db)):
         "message": "Cashes retrieved successfully.",
         "status": True
     }
+
     
 @router.post("/update-stock", response_model=CashListResponse)
-async def increase_cash_stock(
+async def update_cash_stock(
     req: UpdateStockRequest,
     db: AsyncSession = Depends(get_db)
 ):

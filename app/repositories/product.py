@@ -4,6 +4,8 @@ from fastapi import Depends
 from app.core.database import get_db
 from sqlalchemy.future import select
 from typing import Optional
+from app.schemas.product import ProductCreate
+
 
 async def get_product_by_id(
     product_id: int, 
@@ -18,6 +20,23 @@ async def get_product_by_id(
         )
     )
     return result.scalars().first()
+
+async def create_product(
+    product_data: ProductCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    
+    new_product = Product(
+        title=product_data.title,
+        price=product_data.price,
+        stock=product_data.stock,
+        sku=product_data.sku,
+        is_active=product_data.is_active
+    )
+    db.add(new_product)
+    await db.commit()
+    await db.refresh(new_product)
+    return new_product
 
 async def update_stock(
     product_id: int,
