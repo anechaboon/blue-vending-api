@@ -14,12 +14,10 @@ engine = create_async_engine(
     echo=True,
 )
 
-# session factory เดียวพอ
 async_session = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )
 
-# dependency สำหรับ FastAPI
 async def get_db():
     async with async_session() as session:
         yield session

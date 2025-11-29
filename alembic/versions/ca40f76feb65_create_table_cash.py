@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table(
         'cash',
         sa.Column('id', sa.Integer, primary_key=True),
-        sa.Column('cash_type', sa.Enum('coin', 'bill', name='cashtype'), nullable=False),
+        sa.Column('cash_type', sa.Enum('COIN', 'BILL', name='cashtype'), nullable=False),
         sa.Column('cash', sa.Integer, nullable=True),
         sa.Column('stock', sa.Integer, nullable=True),
         sa.Column('is_active', sa.Boolean(), nullable=False),

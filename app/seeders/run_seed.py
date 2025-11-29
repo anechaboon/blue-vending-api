@@ -1,6 +1,6 @@
 import asyncio
 
-from app.db.database import async_session, engine, Base
+from app.core.database import async_session, engine, Base
 from app.seeders.cash import seed_cash
 from app.seeders.product import seed_product
 

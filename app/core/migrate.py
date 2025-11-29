@@ -1,5 +1,5 @@
 import asyncio
-from app.db.database import Base, engine
+from app.core.database import Base, engine
 
 async def run_migrate():
     async with engine.begin() as conn:
