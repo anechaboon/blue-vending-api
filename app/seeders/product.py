@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 async def seed_product(db: AsyncSession):
     products = [
         Product(title='Coca-Cola can', sku='CC-001', stock=100, price=18, is_active=True),
-        Product(title='Pepsi bottle', sku='PB-002', stock=100, price=35, is_active=True),
-        Product(title='Sprite can', sku='SC-003', stock=100, price=17, is_active=True)
+        Product(title='Pepsi bottle', sku='PB-002', stock=100, price=25, is_active=True),
+        Product(title='Sprite can', sku='SC-003', stock=100, price=16, is_active=True)
     ]
 
     for a in products:

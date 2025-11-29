@@ -1,19 +1,19 @@
 """create_table_product
 
-Revision ID: 99758a91301d
-Revises: fcb5808f9686
-Create Date: 2025-11-28 22:12:55.244087
+Revision ID: ab57cdb0edbe
+Revises: fd8788e38c07
+Create Date: 2025-11-29 21:16:43.321456
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '99758a91301d'
-down_revision: Union[str, Sequence[str], None] = 'fcb5808f9686'
+revision: str = 'ab57cdb0edbe'
+down_revision: Union[str, Sequence[str], None] = 'fd8788e38c07'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
