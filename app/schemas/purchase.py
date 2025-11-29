@@ -1,4 +1,11 @@
 from pydantic import BaseModel
+from typing import List, Optional
+
+
+class Product(BaseModel):
+    id: int
+    quantity: int
+    price: Optional[float] = 0.0
 
 class BillSchema(BaseModel):
     b20: int = 0
@@ -14,8 +21,7 @@ class CoinSchema(BaseModel):
     c10: int = 0
     
 class BuyProductRequest(BaseModel):
-    product_id: int
-    quantity: int
+    product: List[Product]
     bill: BillSchema
     coin: CoinSchema
 

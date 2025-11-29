@@ -11,7 +11,7 @@ async def get_all_cash(db: AsyncSession) -> list[Cash]:
     )
     return result.scalars().all()
 
-async def update_stock(
+async def update_stock_cash(
     cash_updates: list[dict],
     db: AsyncSession
 ):

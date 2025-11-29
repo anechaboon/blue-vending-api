@@ -38,7 +38,7 @@ async def create_product(
     await db.refresh(new_product)
     return new_product
 
-async def update_stock(
+async def update_stock_product(
     product_id: int,
     quantity: int,
     is_deduct: bool,

@@ -1,6 +1,9 @@
 from app.schemas.purchase import BuyProductRequest, BuyProductResponse
-from app.repositories.product import get_product_by_id
-from app.repositories.cash import update_stock
+from app.repositories.product import get_product_by_id, update_stock_product
+from app.repositories.cash import update_stock_cash
+from app.repositories.order import create_order
+from app.repositories.order_detail import create_order_detail
+from app.schemas.order_detail import OrderDetailCreate
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.helpers import calculate_change, prepare_req_update_cashes_stock
 
@@ -24,14 +27,20 @@ async def buy_product_service(
         data.coin.c10 * 10
     )
     
-    resProduct = await get_product_by_id(data.product_id, db)
-    totalAmount = resProduct.price * data.quantity
-    if not resProduct:
-        raise ProductNotFound(f"Product with id {data.product_id} not found.")
+    totalAmount = 0
+    for product in data.product:
+        resProduct = await get_product_by_id(product.id, db)
+        product.price = resProduct.price
+        
+        totalAmount +=  resProduct.price * product.quantity
+        if not resProduct:
+            raise ProductNotFound(f"Product with id {product.id} not found.")
+        if resProduct.stock < product.quantity:
+            raise ProductNotFound(f"Insufficient stock for {resProduct.title}.")
+        
     if totalPaid < totalAmount:
         raise ProductNotFound(f"Insufficient funds to buy {resProduct.title}.")
-    if resProduct.stock < data.quantity:
-        raise ProductNotFound(f"Insufficient stock for {resProduct.title}.")
+    
     
     # Update cash stock being paid
     reqUpdateCashStock = {
@@ -49,26 +58,50 @@ async def buy_product_service(
             "10": data.coin.c10,
         }
     }
-    cash_updates = await prepare_req_update_cashes_stock(reqUpdateCashStock, is_deduct=False)  
-    await update_stock(cash_updates, db) 
+    
+    cashUpdates = await prepare_req_update_cashes_stock(reqUpdateCashStock, is_deduct=False)  
+    await update_stock_cash(cashUpdates, db) 
     
     resChange = await calculate_change(totalPaid, totalAmount, db)
     if resChange['status'] == False:
         raise ProductNotFound(resChange['message'])
     
     # Update cash stock exchanged
-    cash_updates = await prepare_req_update_cashes_stock(resChange, is_deduct=True)  
-    await update_stock(cash_updates, db) 
+    cashUpdates = await prepare_req_update_cashes_stock(resChange, is_deduct=True)  
+    await update_stock_cash(cashUpdates, db) 
     
-    # Deduct product stock
-    resProduct.stock -= data.quantity
+    resCreateOrder = await create_order(totalAmount, db)
+
+    for product in data.product:
+    
+        orderDetailReq = OrderDetailCreate(
+            order_id=resCreateOrder.id,
+            product_id=product.id,
+            quantity=product.quantity,
+            total_price=product.quantity * product.price
+        )
+        res = await create_order_detail(
+            orderDetailReq,
+            db=db
+        )
+        if not res:
+            raise ProductNotFound("Failed to create order detail.")
+        
+        # Deduct product stock
+        res = await update_stock_product(
+            product_id=product.id,
+            quantity=product.quantity,
+            is_deduct=True,
+            db=db
+        )
+        if not res:
+            raise ProductNotFound(f"Failed to update stock for product id {product.id}.")
+    
     await db.commit()
     await db.refresh(resProduct)
 
     return {
-        "product_id": resProduct.id,
-        "quantity": data.quantity,
-        "total_price": data.quantity * resProduct.price,
+        "total_price": totalAmount,
         "change_bill": resChange['bill'],
         "change_coin": resChange['coin'],
         "status": True

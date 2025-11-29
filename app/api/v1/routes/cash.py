@@ -3,7 +3,7 @@ from app.schemas.cash import CashListResponse, CashResponse, UpdateStockRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from fastapi import APIRouter, Depends
-from app.repositories.cash import get_all_cash, update_stock
+from app.repositories.cash import get_all_cash, update_stock_cash
 
 router = APIRouter()
 
@@ -40,7 +40,7 @@ async def update_cash_stock(
         cash_updates[0]["cash_type"] = req.cash_type
         cash_updates[0]["cash_value"] = req.cash_value
     
-    updated_records = await update_stock(cash_updates, db=db)
+    updated_records = await update_stock_cash(cash_updates, db=db)
     return {
         "data": updated_records,
         "status": True,

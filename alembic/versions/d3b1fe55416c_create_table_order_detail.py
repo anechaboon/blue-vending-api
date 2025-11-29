@@ -28,7 +28,6 @@ def upgrade() -> None:
         sa.Column('product_id', sa.Integer, nullable=False),
         sa.Column('quantity', sa.Integer, nullable=False),
         sa.Column('total_price', sa.Float, nullable=False),
-        sa.Column('is_active', sa.Boolean(), nullable=False),
         sa.Column('created_at', sa.DateTime, server_default=sa.func.now(), nullable=False)
     )
     # ### end Alembic commands ###

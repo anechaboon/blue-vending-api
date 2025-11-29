@@ -3,7 +3,7 @@ from app.schemas.product import ProductResponse, UpdateStockRequest, ProductCrea
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.database import get_db
-from app.repositories.product import create_product, update_stock
+from app.repositories.product import create_product, update_stock_product
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ async def update_product_stock(
     req: UpdateStockRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    product = await update_stock(req.product_id, req.quantity, req.is_deduct, db=db)
+    product = await update_stock_product(req.product_id, req.quantity, req.is_deduct, db=db)
     return {
         "data": product,
         "status": True,
