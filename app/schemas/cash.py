@@ -1,30 +1,31 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from enum import Enum
+
+class CashType(str, Enum):
+    COIN = "COIN"
+    BILL = "BILL"
+
+class CashResponse(BaseModel):
+    id: int
+    cash_type: CashType
+    cash: int
+    stock: int
+
+    model_config = {
+        "from_attributes": True   # สำคัญมาก!
+    }
+
+class CashListResponse(BaseModel):
+    data: List[CashResponse]
+    message: str
+    status: bool
 
 class CashBase(BaseModel):
     cash_type: str
     cash: int
     stock: int
     is_active: Optional[bool] = True
-
-class CashRead(CashBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        orm_mode = True
-
-class CashListResponse(BaseModel):
-    data: List["CashRead"]
-    message: str
-    status: bool
-
-class CashResponse(BaseModel):
-    data: Optional["CashRead"]
-    message: str
-    status: bool
 
 class CashCreate(CashBase):
     pass

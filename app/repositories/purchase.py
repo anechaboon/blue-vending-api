@@ -1,8 +1,15 @@
-from app.schemas.purchase import BuyProductRequest, BuyProductResponse
 from app.models.product import Product
-from app.models.cash import Cash
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from typing import Optional
 
-async def process_purchase(data: BuyProductRequest) -> BuyProductResponse:
-    # ทำ business logic buy product (คุณคิดเอง)
-    # เช่น ลด stock, เพิ่ม cash, คำนวณเงินทอน เป็นต้น
-    pass
+async def get_product_by_id(product_id: int, db: AsyncSession) -> Optional[Product]:
+    result = await db.execute(
+        select(Product).where(
+            Product.id == product_id,
+            Product.is_active.is_(True),
+            Product.deleted_at.is_(None),
+        )
+    )
+    return result.scalars().first()
+
