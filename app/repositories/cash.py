@@ -11,22 +11,25 @@ async def get_all_cash(db: AsyncSession) -> list[Cash]:
     )
     return result.scalars().all()
 
-
-# cash_updates = { cash_type, cash_value, quantity, is_deduct }
-async def update_cashes_stock(
+async def update_stock(
     cash_updates: list[dict],
     db: AsyncSession
-) -> None:
+):
+    updated_records = []
     for update in cash_updates:
         stmt = (
             select(Cash)
             .where(
-                Cash.cash_type == update['cash_type'],
-                Cash.cash == update['cash_value'],
                 Cash.is_active.is_(True),
                 Cash.deleted_at.is_(None)
             )
         )
+        
+        if 'cash_id' in update:
+            stmt = stmt.where(Cash.id == update['cash_id'])
+        elif 'cash_type' in update and 'cash_value' in update:
+            stmt = stmt.where(Cash.cash_type == update['cash_type'], Cash.cash == update['cash_value'])
+            
         result = await db.execute(stmt)
         cash_record = result.scalars().first()
         if cash_record:
@@ -35,5 +38,8 @@ async def update_cashes_stock(
             else:
                 cash_record.stock += update['quantity']
             db.add(cash_record)
+            updated_records.append(cash_record)
+
     await db.commit()
+    return updated_records
 

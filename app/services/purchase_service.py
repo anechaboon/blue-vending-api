@@ -1,6 +1,6 @@
 from app.schemas.purchase import BuyProductRequest, BuyProductResponse
 from app.repositories.product import get_product_by_id
-from app.repositories.cash import update_cashes_stock
+from app.repositories.cash import update_stock
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.helpers import calculate_change, prepare_req_update_cashes_stock
 
@@ -50,7 +50,7 @@ async def buy_product_service(
         }
     }
     cash_updates = await prepare_req_update_cashes_stock(reqUpdateCashStock, is_deduct=False)  
-    await update_cashes_stock(cash_updates, db) 
+    await update_stock(cash_updates, db) 
     
     resChange = await calculate_change(totalPaid, totalAmount, db)
     if resChange['status'] == False:
@@ -58,7 +58,7 @@ async def buy_product_service(
     
     # Update cash stock exchanged
     cash_updates = await prepare_req_update_cashes_stock(resChange, is_deduct=True)  
-    await update_cashes_stock(cash_updates, db) 
+    await update_stock(cash_updates, db) 
     
     # Deduct product stock
     resProduct.stock -= data.quantity

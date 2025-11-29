@@ -18,3 +18,25 @@ async def get_product_by_id(
         )
     )
     return result.scalars().first()
+
+async def update_stock(
+    product_id: int,
+    quantity: int,
+    is_deduct: bool,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Product)
+        .where(Product.id == product_id)
+    )
+    product = result.scalars().first()
+    if is_deduct == True:
+        product.stock -= quantity
+    else: 
+        product.stock += quantity
+
+    await db.commit()
+    await db.refresh(product)
+
+    return product
+        
