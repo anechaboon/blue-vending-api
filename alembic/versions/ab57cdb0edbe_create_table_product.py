@@ -25,6 +25,7 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('title', sa.String(length=255), nullable=False),
         sa.Column('sku', sa.String(length=50), nullable=True),
+        sa.Column('image', sa.String(length=255), nullable=True),
         sa.Column('stock', sa.Integer, nullable=True),
         sa.Column('price', sa.Float, nullable=False),
         sa.Column('is_active', sa.Boolean(), nullable=False),

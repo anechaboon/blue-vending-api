@@ -5,6 +5,7 @@ from app.core.database import get_db
 from sqlalchemy.future import select
 from typing import Optional
 from app.schemas.product import ProductCreate
+from app.utils.helpers import uploadFile
 
 
 async def get_product_by_id(
@@ -25,11 +26,15 @@ async def create_product(
     product_data: ProductCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    
+    resUploadFile = {'status': False, 'data': None}
+    if product_data.image is not None:
+        resUploadFile = uploadFile(product_data.image, "products")
+        
     new_product = Product(
         title=product_data.title,
         price=product_data.price,
         stock=product_data.stock,
+        image=resUploadFile['data'],
         sku=product_data.sku,
         is_active=product_data.is_active
     )

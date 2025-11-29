@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
+from fastapi import UploadFile, File
 
 class BaseResponse(BaseModel):
     status: bool = True
@@ -30,6 +31,7 @@ class ProductBase(BaseModel):
     price: float
     stock: int
     sku: Optional[str] = None
+    image: UploadFile | None = File(None),
     is_active: Optional[bool] = True
     
 class ProductCreate(ProductBase):

@@ -12,6 +12,7 @@ class Product(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     sku: Mapped[str] = mapped_column(String(50), unique=True, nullable=True)
+    image: Mapped[str] = mapped_column(String(500), nullable=True)
     stock: Mapped[int] = mapped_column(Integer, nullable=True)
     price: Mapped[float] = mapped_column(nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
