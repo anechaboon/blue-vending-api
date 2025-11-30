@@ -19,7 +19,7 @@ async def calculate_change(amount_paid: float, total_price: float, db: AsyncSess
     
     billsChange = {500: 0, 100: 0, 50: 0, 20: 0}
     coinsChange = {10: 0, 5: 0, 2: 0, 1: 0}
-    allCash = await get_all_cash(db)  # Need to pass db or call from route
+    allCash = await get_all_cash(db, None)  # Need to pass db or call from route
     for c in allCash:
         cash = c.__dict__
         if cash['cash'] == 1000:

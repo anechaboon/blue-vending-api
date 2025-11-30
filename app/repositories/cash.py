@@ -5,12 +5,19 @@ from app.schemas.cash import CashUpdate
 from fastapi import Depends
 from app.core.database import get_db
 
-async def get_all_cash(db: AsyncSession) -> list[Cash]:
-    result = await db.execute(
+async def get_all_cash(db: AsyncSession, cash_type: str | None) -> list[Cash]:
+    
+    stmt = (
         select(Cash)
         .where(Cash.is_active.is_(True), Cash.deleted_at.is_(None))
+        .order_by(Cash.cash_type.asc())
         .order_by(Cash.created_at.desc())
     )
+    
+    if cash_type:
+        stmt = stmt.where(Cash.cash_type == cash_type)
+        
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 async def update_cash(

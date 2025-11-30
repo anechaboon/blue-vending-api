@@ -8,8 +8,11 @@ router = APIRouter()
 
 # GET all cash
 @router.get("/", response_model=CashListResponse)
-async def get_cashes(db: AsyncSession = Depends(get_db)):
-    cashes = await get_all_cash(db)
+async def get_cashes(
+    cash_type: str | None = None,
+    db: AsyncSession = Depends(get_db)
+):
+    cashes = await get_all_cash(db, cash_type=cash_type)
     if not cashes:
         return {
             "data": [],
