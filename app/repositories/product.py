@@ -4,9 +4,22 @@ from fastapi import Depends
 from app.core.database import get_db
 from sqlalchemy.future import select
 from typing import Optional
-from app.schemas.product import ProductCreate
+from app.schemas.product import ProductCreate, ProductUpdate
 from app.utils.helpers import uploadFile
 
+
+# GET ALL PRODUCTS
+async def get_all_products(
+    db: AsyncSession = Depends(get_db)
+) -> list[Product]:
+    result = await db.execute(
+        select(Product)
+        .where(
+            Product.is_active.is_(True),
+            Product.deleted_at.is_(None)
+        ).order_by(Product.id.desc())
+    )
+    return result.scalars().all()
 
 async def get_product_by_id(
     product_id: int, 
@@ -42,6 +55,32 @@ async def create_product(
     await db.commit()
     await db.refresh(new_product)
     return new_product
+
+async def update_product(
+    product_id: int,
+    req: ProductUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Product)
+        .where(Product.id == product_id)
+    )
+    product = result.scalars().first()
+    
+    resUploadFile = {'status': False, 'data': None}
+    if req.image is not None:
+        resUploadFile = uploadFile(req.image, "products")
+        product.image = resUploadFile['data']
+        
+    product.title = req.title
+    product.price = req.price
+    product.stock = req.stock
+    product.sku = req.sku
+
+    await db.commit()
+    await db.refresh(product)
+
+    return product
 
 async def update_stock_product(
     product_id: int,
