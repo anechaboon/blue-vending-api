@@ -1,7 +1,9 @@
 from app.models.cash import Cash
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.schemas.cash import CashListResponse
+from app.schemas.cash import CashUpdate
+from fastapi import Depends
+from app.core.database import get_db
 
 async def get_all_cash(db: AsyncSession) -> list[Cash]:
     result = await db.execute(
@@ -10,6 +12,25 @@ async def get_all_cash(db: AsyncSession) -> list[Cash]:
         .order_by(Cash.created_at.desc())
     )
     return result.scalars().all()
+
+async def update_cash(
+    cash_id: int,
+    req: CashUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Cash)
+        .where(Cash.id == cash_id)
+    )
+    cash = result.scalars().first()
+    cash.cash_type = req.cash_type
+    cash.cash = req.cash
+    cash.stock = req.stock
+
+    await db.commit()
+    await db.refresh(cash)
+
+    return cash
 
 async def update_stock_cash(
     cash_updates: list[dict],

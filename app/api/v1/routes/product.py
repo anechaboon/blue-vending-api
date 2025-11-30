@@ -66,7 +66,7 @@ async def update(
     return {
         "data": product,
         "status": True,
-        "message": "Stock updated successfully"
+        "message": "Product updated successfully"
     }
 
 

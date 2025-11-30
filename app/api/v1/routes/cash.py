@@ -1,9 +1,8 @@
-from fastapi import APIRouter
-from app.schemas.cash import CashListResponse, CashResponse, UpdateStockRequest
+from fastapi import APIRouter, Form, APIRouter, Depends
+from app.schemas.cash import CashListResponse, CashResponse, UpdateStockRequest, CashUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from fastapi import APIRouter, Depends
-from app.repositories.cash import get_all_cash, update_stock_cash
+from app.repositories.cash import get_all_cash, update_stock_cash, update_cash
 
 router = APIRouter()
 
@@ -23,6 +22,26 @@ async def get_cashes(db: AsyncSession = Depends(get_db)):
         "status": True
     }
 
+@router.put("/{cash_id}", response_model=CashResponse)
+async def update(
+    cash_id: int, 
+    cash_type: str = Form(...),
+    cash: str = Form(...),
+    stock: str = Form(...),
+    db: AsyncSession = Depends(get_db)
+):
+
+    req = CashUpdate(
+        cash_type=cash_type,
+        cash=cash,
+        stock=stock
+    )
+    res = await update_cash(cash_id, req, db=db)
+    return {
+        "data": res,
+        "status": True,
+        "message": "Cash updated successfully"
+    }
     
 @router.post("/update-stock", response_model=CashListResponse)
 async def update_cash_stock(

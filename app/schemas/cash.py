@@ -14,17 +14,19 @@ class CashType(str, Enum):
     COIN = "COIN"
     BILL = "BILL"
 
-class CashResponse(BaseModel):
+class CashItem(BaseModel):
     id: int
-    cash_type: CashType
+    cash_type: str
     cash: int
     stock: int
-    model_config = {
-        "from_attributes": True # Enable ORM mode
-    }
+    is_active: bool
+    model_config = {"from_attributes": True}  # enable ORM mode
+    
+class CashResponse(BaseResponse):
+    data: CashItem
 
 class CashListResponse(BaseResponse):
-    data: List[CashResponse]
+    data: List[CashItem]
 
 class CashBase(BaseModel):
     cash_type: str
