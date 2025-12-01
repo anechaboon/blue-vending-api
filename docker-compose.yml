@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15
-    container_name: my_postgres
+    container_name: my_postgres_db
     environment:
       POSTGRES_USER: devuser
       POSTGRES_PASSWORD: devpass
@@ -13,7 +13,7 @@ services:
 
   fastapi:
     build: .
-    container_name: my_fastapi
+    container_name: blue_vending_api
     depends_on:
       - db
     ports:
