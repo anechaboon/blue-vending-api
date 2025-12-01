@@ -6,6 +6,11 @@ from sqlalchemy import pool
 from app.core.config_loader import settings
 from app.core.database import Base
 
+from app.models.order_detail import OrderDetail
+from app.models.orders import Order
+from app.models.product import Product
+from app.models.cash import Cash
+
 from alembic import context
 
 # this is the Alembic Config object, which provides
