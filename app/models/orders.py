@@ -7,7 +7,7 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 class Order(Base):
-    __tablename__ = 'order'
+    __tablename__ = 'orders'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     total_amount: Mapped[float] = mapped_column(nullable=False)

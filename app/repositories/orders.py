@@ -1,4 +1,4 @@
-from app.models.order import Order
+from app.models.orders import Order
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import Optional

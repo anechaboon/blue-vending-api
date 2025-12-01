@@ -2,7 +2,7 @@ from app.schemas.purchase import BuyProductRequest, BuyProductResponse
 from app.schemas.base import ErrorResponse
 from app.repositories.product import get_product_by_id, update_stock_product
 from app.repositories.cash import update_stock_cash, get_all_cash
-from app.repositories.order import create_order
+from app.repositories.orders import create_order
 from app.repositories.order_detail import create_order_detail
 from app.schemas.order_detail import OrderDetailCreate
 from sqlalchemy.ext.asyncio import AsyncSession
