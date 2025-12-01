@@ -4,21 +4,38 @@ import os
 import shutil
 from app.repositories.cash import get_all_cash
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.cash import CashType
+from app.models.cash import CashType, Cash
 
-async def calculate_change(amount_paid: float, total_price: float, db: AsyncSession):
+async def calculate_change(cashes: list[Cash], amount_paid: float, total_price: float, db: AsyncSession):
     changeAmount = round(amount_paid - total_price, 2)
     if changeAmount < 0:
         return {
             "status": False,
             "message": "Insufficient payment"
         }  # Not enough payment
+
+    billsStock = {}
+    coinsStock = {}
     
-    billsStock = {500: 0, 100: 0, 50: 0, 20: 0}
-    coinsStock = {10: 0, 5: 0, 2: 0, 1: 0}
+    billsChange = {}
+    coinsChange = {}
     
-    billsChange = {500: 0, 100: 0, 50: 0, 20: 0}
-    coinsChange = {10: 0, 5: 0, 2: 0, 1: 0}
+    BILL = {}
+    COIN = {}
+    for cash in cashes:
+        cash_dict = cash.__dict__
+        if cash_dict['cash'] == 1000:
+            continue  # Skip 1000 bills for change
+        if cash_dict['cash_type'] == CashType.BILL:
+            billsStock[cash_dict['cash']] = 0
+            billsChange[cash_dict['cash']] = 0
+            BILL[str(cash_dict['cash'])] = 0
+        elif cash_dict['cash_type'] == CashType.COIN:
+            coinsStock[cash_dict['cash']] = 0
+            coinsChange[cash_dict['cash']] = 0
+            COIN[str(cash_dict['cash'])] = 0
+    
+    
     allCash = await get_all_cash(db, None)  # Need to pass db or call from route
     for c in allCash:
         cash = c.__dict__
@@ -47,21 +64,16 @@ async def calculate_change(amount_paid: float, total_price: float, db: AsyncSess
             "status": False,
             "message": "Insufficient change available"
         }  
+    
+    for [key, qty] in billsChange.items():
+        BILL[str(key)] = qty
+    for [key, qty] in coinsChange.items():
+        COIN[str(key)] = qty
         
     return {
         "status": True,
-        "bill": {
-            "500": billsChange[500],
-            "100": billsChange[100],
-            "50": billsChange[50],
-            "20": billsChange[20],
-        },
-        "coin": {
-            "10": coinsChange[10],
-            "5": coinsChange[5],
-            "2": coinsChange[2],
-            "1": coinsChange[1],
-        }
+        "BILL": BILL,
+        "COIN": COIN
     }
     
 async def prepare_req_update_cashes_stock(
@@ -69,7 +81,7 @@ async def prepare_req_update_cashes_stock(
     is_deduct: bool = True
 ) -> list[dict]:
     cash_updates = []
-    for bill_value, qty in change_dict['bill'].items():
+    for bill_value, qty in change_dict['BILL'].items():
         if qty > 0:
             cash_updates.append({
                 "cash_type": "BILL",
@@ -77,7 +89,7 @@ async def prepare_req_update_cashes_stock(
                 "quantity": qty,
                 "is_deduct": is_deduct
             })
-    for coin_value, qty in change_dict['coin'].items():
+    for coin_value, qty in change_dict['COIN'].items():
         if qty > 0:
             cash_updates.append({
                 "cash_type": "COIN",
