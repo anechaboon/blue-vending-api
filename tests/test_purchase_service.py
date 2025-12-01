@@ -1,10 +1,11 @@
-# tests/test_buy_product_service.py
+# tests/test_purchase_service.py
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from types import SimpleNamespace
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.purchase import BuyProductRequest, ProductItem
-from app.services.purchase_service import buy_product_service, ProductNotFound
+from app.services.purchase_service import buy_product_service
+from app.schemas.base import ErrorResponse
 
 # ---------------- Helper ----------------
 def mock_scalar(result):
@@ -62,7 +63,7 @@ def mock_cashes():
 
 # ---------------- Test buy_product_service ----------------
 @pytest.mark.asyncio
-async def test_buy_product_success(mock_db, buy_request, sample_product_instance, sample_cash_instance):
+async def test_purchase_success(mock_db, buy_request, sample_product_instance, sample_cash_instance):
     # Mock repository functions
     with patch("app.services.purchase_service.get_all_cash", new=AsyncMock(return_value=[sample_cash_instance])), \
         patch("app.services.purchase_service.get_product_by_id", new=AsyncMock(return_value=sample_product_instance)), \
@@ -81,26 +82,26 @@ async def test_buy_product_success(mock_db, buy_request, sample_product_instance
         assert result["change_coin"] == {}
 
 @pytest.mark.asyncio
-async def test_buy_product_product_not_found(mock_db, buy_request):
+async def test_purchase_product_not_found(mock_db, buy_request):
     # mock get_product_by_id ให้ return None
     with patch("app.services.purchase_service.get_all_cash", new=AsyncMock(return_value=[])), \
         patch("app.services.purchase_service.get_product_by_id", new=AsyncMock(return_value=None)):
         
-        with pytest.raises(ProductNotFound):
+        with pytest.raises(ErrorResponse):
             await buy_product_service(buy_request, mock_db)
 
 @pytest.mark.asyncio
-async def test_buy_product_insufficient_funds(mock_db, buy_request, sample_product_instance, sample_cash_instance):
+async def test_purchase_insufficient_funds(mock_db, buy_request, sample_product_instance, sample_cash_instance):
     # mock get_all_cash คืนค่าเงินไม่พอ
     sample_cash_instance.cash = 5  # 5*10=50 < 100
     with patch("app.services.purchase_service.get_all_cash", new=AsyncMock(return_value=[sample_cash_instance])), \
         patch("app.services.purchase_service.get_product_by_id", new=AsyncMock(return_value=sample_product_instance)):
         
-        with pytest.raises(ProductNotFound):
+        with pytest.raises(ErrorResponse):
             await buy_product_service(buy_request, mock_db)
             
 @pytest.mark.asyncio
-async def test_buy_product_calculate_change_fail(mock_db, buy_request, mock_cashes):
+async def test_purchase_calculate_change_fail(mock_db, buy_request, mock_cashes):
     # mock calculate_change ให้ status=False
     with patch("app.services.purchase_service.get_all_cash", AsyncMock(return_value=mock_cashes)), \
         patch("app.services.purchase_service.get_product_by_id", AsyncMock(return_value=SimpleNamespace(id=1, title="Test", stock=10, price=100))), \
@@ -108,6 +109,27 @@ async def test_buy_product_calculate_change_fail(mock_db, buy_request, mock_cash
         patch("app.services.purchase_service.update_stock_cash", AsyncMock(return_value=None)), \
         patch("app.services.purchase_service.calculate_change", AsyncMock(return_value={"status": False, "message": "Cannot give change"})):
 
-        with pytest.raises(ProductNotFound) as exc:
+        with pytest.raises(ErrorResponse) as exc:
             await buy_product_service(buy_request, mock_db)
         assert "Cannot give change" in str(exc.value)
+        
+@pytest.mark.asyncio
+async def test_purchase_no_cash_available(mock_db, buy_request):
+    with patch(
+        "app.services.purchase_service.get_all_cash",
+        AsyncMock(return_value=None)
+    ):
+        with pytest.raises(ErrorResponse) as exc:
+            await buy_product_service(buy_request, mock_db)
+
+        assert "No cash available in the system." in str(exc.value)
+        
+@pytest.mark.asyncio
+async def test_purchase_product_not_found_with_cash(mock_db, buy_request, mock_cashes):
+    with patch("app.services.purchase_service.get_all_cash", AsyncMock(return_value=mock_cashes)), \
+        patch("app.services.purchase_service.get_product_by_id", AsyncMock(return_value=None)
+    ):
+        with pytest.raises(ErrorResponse) as exc:
+            await buy_product_service(buy_request, mock_db)
+
+        assert "Product with id" in str(exc.value) and "not found" in str(exc.value)

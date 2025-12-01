@@ -1,9 +1,9 @@
 # app/core/exception_handlers.py
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
-from app.services.purchase_service import ProductNotFound
+from app.schemas.base import ErrorResponse
 
-async def product_not_found_handler(request: Request, exc: ProductNotFound):
+async def product_not_found_handler(request: Request, exc: ErrorResponse):
     return JSONResponse(
         status_code=200,
         content={

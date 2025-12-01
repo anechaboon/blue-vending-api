@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.core.exception_handlers import product_not_found_handler, general_exception_handler
 from app.api.v1.routes import api_router
-from app.services.purchase_service import ProductNotFound
+from app.schemas.base import ErrorResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.staticfiles import StaticFiles
@@ -24,5 +24,5 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 app.include_router(api_router, prefix="/api/v1")
 
 # Exception Handlers
-app.add_exception_handler(ProductNotFound, product_not_found_handler)
+app.add_exception_handler(ErrorResponse, product_not_found_handler)
 app.add_exception_handler(Exception, general_exception_handler)
