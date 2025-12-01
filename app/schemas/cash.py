@@ -39,3 +39,6 @@ class CashCreate(CashBase):
 
 class CashUpdate(CashBase):
     pass
+
+class CashNotFound(Exception):
+    pass

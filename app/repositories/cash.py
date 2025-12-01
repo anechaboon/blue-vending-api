@@ -1,10 +1,11 @@
 from app.models.cash import Cash
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.schemas.cash import CashUpdate, CashCreate
+from app.schemas.cash import CashUpdate, CashCreate, CashNotFound
 from fastapi import Depends
 from app.core.database import get_db
 from sqlalchemy import func
+from datetime import datetime
 
 async def get_all_cash(db: AsyncSession, cash_type: str = None, is_active: str = 'True') -> list[Cash]:
     
@@ -54,7 +55,9 @@ async def update_cash(
         select(Cash)
         .where(Cash.id == cash_id)
     )
-    cash = result.scalars().first()
+    cash = result.scalar_one_or_none()
+    if not cash:
+        raise CashNotFound()
     cash.cash_type = req.cash_type
     cash.cash = req.cash
     cash.stock = req.stock
@@ -73,8 +76,12 @@ async def soft_delete_cash(
         select(Cash)
         .where(Cash.id == cash_id)
     )
-    cash = result.scalars().first()
-    cash.deleted_at = func.now()
+    cash = result.scalar_one_or_none()
+    
+    if not cash:
+        raise CashNotFound()
+    
+    cash.deleted_at = datetime.utcnow()
 
     await db.commit()
     await db.refresh(cash)
@@ -101,7 +108,7 @@ async def update_stock_cash(
             stmt = stmt.where(Cash.cash_type == update['cash_type'], Cash.cash == update['cash_value'])
             
         result = await db.execute(stmt)
-        cash_record = result.scalars().first()
+        cash_record = result.scalar_one_or_none()
         if cash_record:
             if update['is_deduct']:
                 cash_record.stock -= update['quantity']

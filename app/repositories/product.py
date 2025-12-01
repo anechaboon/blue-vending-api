@@ -33,7 +33,7 @@ async def get_product_by_id(
             Product.deleted_at.is_(None)
         )
     )
-    return result.scalars().first()
+    return result.scalar_one_or_none()
 
 async def create_product(
     product_data: ProductCreate,
@@ -65,7 +65,7 @@ async def update_product(
         select(Product)
         .where(Product.id == product_id)
     )
-    product = result.scalars().first()
+    product = result.scalar_one_or_none()
     
     resUploadFile = {'status': False, 'data': None}
     if req.image is not None:
@@ -92,7 +92,7 @@ async def update_stock_product(
         select(Product)
         .where(Product.id == product_id)
     )
-    product = result.scalars().first()
+    product = result.scalar_one_or_none()
     if is_deduct == True:
         product.stock -= quantity
     else: 
