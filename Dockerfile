@@ -1,22 +1,24 @@
 # Base image
 FROM python:3.11-slim
 
-# Set workdir
+# Set working directory
 WORKDIR /app
 
 # Set environment
 ENV PYTHONPATH=/app
 
-# Install dependencies
-COPY ./app/requirements.txt .
+# Copy and install dependencies
+COPY app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
-COPY ./app /app/app
+# Copy application code
+COPY app /app/app
+
+# Copy wait-for-it script
 COPY wait-for-it.sh /app/wait-for-it.sh
 RUN chmod +x /app/wait-for-it.sh
 
-# Default command: wait db -> migrate -> seed -> start uvicorn
+# Default command: wait for DB -> migrate -> seed -> start uvicorn
 CMD ["/bin/sh", "-c", "\
   /app/wait-for-it.sh db:5432 --timeout=30 --strict -- \
   python -m app.core.migrate && \
