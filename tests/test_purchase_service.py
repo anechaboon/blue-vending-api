@@ -93,7 +93,7 @@ async def test_purchase_product_not_found(mock_db, buy_request):
 @pytest.mark.asyncio
 async def test_purchase_insufficient_funds(mock_db, buy_request, sample_product_instance, sample_cash_instance):
     # mock get_all_cash คืนค่าเงินไม่พอ
-    sample_cash_instance.cash = 5  # 5*10=50 < 100
+    sample_cash_instance.cash = 5
     with patch("app.services.purchase_service.get_all_cash", new=AsyncMock(return_value=[sample_cash_instance])), \
         patch("app.services.purchase_service.get_product_by_id", new=AsyncMock(return_value=sample_product_instance)):
         

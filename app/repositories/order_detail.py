@@ -1,8 +1,6 @@
 from app.models.order_detail import OrderDetail
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.order_detail import OrderDetailCreate
-from sqlalchemy.future import select
-from typing import Optional
 
 async def create_order_detail(
     req: OrderDetailCreate,

@@ -24,10 +24,8 @@ async def test_create_order_success(mock_db):
         mock_db.commit = AsyncMock()
         mock_db.refresh = AsyncMock()
 
-        # act
         result = await create_order(total_amount, mock_db)
 
-        # assert
         mock_db.add.assert_called_once_with(mock_order_instance)
         mock_db.commit.assert_called_once()
         mock_db.refresh.assert_called_once_with(mock_order_instance)

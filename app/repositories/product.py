@@ -7,7 +7,6 @@ from typing import Optional
 from app.schemas.product import ProductCreate, ProductUpdate
 from app.utils.helpers import uploadFile
 
-
 # GET ALL PRODUCTS
 async def get_all_products(
     db: AsyncSession = Depends(get_db)

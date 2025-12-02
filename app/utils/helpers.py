@@ -1,4 +1,4 @@
-from fastapi import UploadFile, File, Form
+from fastapi import UploadFile
 import uuid
 import os
 import shutil

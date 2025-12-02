@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Form, UploadFile, File, Depends
-from app.schemas.product import ProductResponse, UpdateStockRequest, ProductCreate,ProductListResponse, ProductUpdate
+from app.schemas.product import ProductResponse, UpdateStockRequest, ProductListResponse, ProductUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.repositories.product import create_product, update_stock_product, get_all_products, update_product
