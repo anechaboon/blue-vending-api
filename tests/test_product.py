@@ -11,6 +11,7 @@ from app.repositories.product import (
     update_stock_product
 )
 from app.schemas.product import ProductCreate, ProductUpdate
+from app.repositories.product import soft_delete_product
 
 # ---------------- Helper ----------------
 def mock_scalar(result):
@@ -121,3 +122,27 @@ async def test_update_stock_product_deduct(mock_db, sample_product_instance):
     assert sample_product_instance.stock == 30
     assert result == sample_product_instance
     mock_db.commit.assert_called_once()
+    
+    
+async def test_soft_delete_product_success(mock_db, sample_product_instance):
+    mock_db.execute.return_value = mock_scalar(sample_product_instance)
+    mock_db.commit = AsyncMock()
+    mock_db.refresh = AsyncMock()
+
+    
+    result = await soft_delete_product(1, mock_db)
+    
+    assert sample_product_instance.deleted_at is not None
+    assert result == sample_product_instance
+    mock_db.commit.assert_called_once()
+    mock_db.refresh.assert_called_once_with(sample_product_instance)
+
+
+@pytest.mark.asyncio
+async def test_soft_delete_product_not_found(mock_db):
+    mock_db.execute.return_value = mock_scalar(None)
+    
+    
+    with pytest.raises(Exception):
+        await soft_delete_product(999, mock_db)
+

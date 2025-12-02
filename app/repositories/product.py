@@ -6,6 +6,8 @@ from sqlalchemy.future import select
 from typing import Optional
 from app.schemas.product import ProductCreate, ProductUpdate
 from app.utils.helpers import uploadFile
+from datetime import datetime
+from app.schemas.base import ErrorResponse
 
 # GET ALL PRODUCTS
 async def get_all_products(
@@ -102,3 +104,22 @@ async def update_stock_product(
 
     return product
         
+        
+async def soft_delete_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Product).where(Product.id == product_id)
+    )
+    product = result.scalar_one_or_none()
+    
+    if not product:
+        raise ErrorResponse()
+    
+    product.deleted_at = datetime.utcnow()
+
+    await db.commit()
+    await db.refresh(product)
+
+    return product

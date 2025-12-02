@@ -2,7 +2,7 @@ from fastapi import APIRouter, Form, UploadFile, File, Depends
 from app.schemas.product import ProductResponse, UpdateStockRequest, ProductListResponse, ProductUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.repositories.product import create_product, update_stock_product, get_all_products, update_product
+from app.repositories.product import create_product, update_stock_product, get_all_products, update_product, soft_delete_product
 
 router = APIRouter()
 
@@ -81,5 +81,20 @@ async def update_product_stock(
         "status": True,
         "message": "Stock updated successfully"
     }
+
+
+@router.delete("/{product_id}", response_model=ProductResponse)
+async def delete_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+
+    res = await soft_delete_product(product_id, db=db)
+    return {
+        "data": res,
+        "status": True,
+        "message": "Cash deleted successfully"
+    }    
+
 
 
