@@ -2,27 +2,37 @@ name: Deploy FastAPI to Cloud Run
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - firebase   # ← ใช้ branch firebase
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup gcloud
+      - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
 
-      - name: Build & Deploy
+      - name: Build Docker image
         run: |
-          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/fastapi
-          gcloud run deploy fastapi-service \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/fastapi \
-            --region asia-southeast1 \
+          gcloud builds submit \
+            --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/fastapi-firebase
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy fastapi-firebase \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/fastapi-firebase \
             --platform managed \
+            --region asia-southeast1 \
             --allow-unauthenticated
