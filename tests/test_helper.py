@@ -26,7 +26,7 @@ async def test_calculate_change_success():
         result = await calculate_change(cashes, amount_paid=1000, total_price=675, db=mock_db)
 
     assert result["status"] is True
-    assert sum(result["BILL"].values()) > 0 or sum(result["COIN"].values()) > 0
+    assert sum(result["BILL"].values()) > 0 and sum(result["COIN"].values()) > 0
 
 
 @pytest.mark.asyncio
@@ -39,11 +39,11 @@ async def test_calculate_change_insufficient_payment():
 
 @pytest.mark.asyncio
 async def test_calculate_change_insufficient_change():
-    cashes = [Cash(cash=100, cash_type=CashType.BILL, stock=0)]
+    cashes = [Cash(cash=10, cash_type=CashType.BILL, stock=4)]
     mock_db = AsyncMock()
     with patch("app.utils.helpers.get_all_cash", new_callable=AsyncMock) as mock_get_all_cash:
         mock_get_all_cash.return_value = cashes
-        result = await calculate_change(cashes, amount_paid=200, total_price=50, db=mock_db)
+        result = await calculate_change(cashes, amount_paid=100, total_price=50, db=mock_db)
 
     assert result["status"] is False
     assert result["message"] == "Insufficient change available"
