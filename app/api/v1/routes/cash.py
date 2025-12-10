@@ -2,7 +2,7 @@ from fastapi import APIRouter, Form, APIRouter, Depends
 from app.schemas.cash import CashListResponse, CashResponse, UpdateStockRequest, CashUpdate, CashCreate
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.repositories.cash import get_all_cash, update_stock_cash, update_cash, soft_delete_cash, create_cash
+from app.repositories.cash import get_all_cash, update_cash, soft_delete_cash, create_cash
 
 router = APIRouter()
 
@@ -10,10 +10,9 @@ router = APIRouter()
 @router.get("/", response_model=CashListResponse)
 async def get_cashes(
     cash_type: str | None = None,
-    is_active: str = 'True',
-    db: AsyncSession = Depends(get_db)
+    is_active: str = 'True'
 ):
-    cashes = await get_all_cash(db, cash_type=cash_type, is_active=is_active)
+    cashes = get_all_cash(cash_type=cash_type, is_active=is_active)
     if not cashes:
         return {
             "data": [],
@@ -32,7 +31,6 @@ async def create(
     cash: str = Form(...),
     stock: str = Form(...),
     is_active: bool = Form(...),
-    db: AsyncSession = Depends(get_db)
 ):
     req = CashCreate(
         cash_type=cash_type,
@@ -40,7 +38,7 @@ async def create(
         stock=stock,
         is_active=is_active
     )
-    new_cash = await create_cash(req=req, db=db)
+    new_cash = await create_cash(req=req)
     return {
         "data": new_cash,
         "status": True,
@@ -49,12 +47,11 @@ async def create(
 
 @router.put("/{cash_id}", response_model=CashResponse)
 async def update(
-    cash_id: int, 
+    cash_id: str, 
     cash_type: str = Form(...),
     cash: str = Form(...),
     stock: str = Form(...),
-    is_active: bool = Form(...),
-    db: AsyncSession = Depends(get_db)
+    is_active: bool = Form(...)
 ):
 
     req = CashUpdate(
@@ -63,7 +60,7 @@ async def update(
         stock=stock,
         is_active=is_active
     )
-    res = await update_cash(cash_id, req, db=db)
+    res = await update_cash(cash_id, req)
     return {
         "data": res,
         "status": True,
@@ -72,11 +69,10 @@ async def update(
     
 @router.delete("/{cash_id}", response_model=CashResponse)
 async def delete_cash(
-    cash_id: int,
-    db: AsyncSession = Depends(get_db)
+    cash_id: str
 ):
 
-    res = await soft_delete_cash(cash_id, db=db)
+    res = await soft_delete_cash(cash_id)
     return {
         "data": res,
         "status": True,

@@ -13,7 +13,6 @@ async def buy_product(
     product: str = Form(...),
     BILL: str = Form(...),
     COIN: str = Form(...),
-    db: AsyncSession = Depends(get_db)
 ):
     try:
         # Convert string → JSON
@@ -38,4 +37,4 @@ async def buy_product(
         }
 
     # Everything ok → call service
-    return await buy_product_service(data, db)
+    return await buy_product_service(data)

@@ -2,18 +2,30 @@ from app.models.order_detail import OrderDetail
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.order_detail import OrderDetailCreate
 
+from firebase import db
+from datetime import datetime
+from fastapi import HTTPException
+
 async def create_order_detail(
-    req: OrderDetailCreate,
-    db: AsyncSession
+    req: OrderDetailCreate
 ) -> OrderDetail:
-    new_order_detail = OrderDetail(
-        order_id=req.order_id,
-        product_id=req.product_id,
-        quantity=req.quantity,
-        total_price=req.total_price
-    )
-    db.add(new_order_detail)
-    await db.commit()
-    await db.refresh(new_order_detail)
-    return new_order_detail
+    try:
+        data = {
+            "order_id": req.order_id,
+            "product_id": req.product_id,
+            "quantity": req.quantity,
+            "price": req.price,
+            "created_at": datetime.utcnow()
+        }
+
+        # Create a new document with auto-generated ID
+        doc_ref = db.collection("order_details").document()
+        doc_ref.set(data)
+
+        # Retrieve the document to return
+        doc = doc_ref.get()
+        return {**doc.to_dict(), "id": doc.id}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 

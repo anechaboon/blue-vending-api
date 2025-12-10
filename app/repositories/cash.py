@@ -6,117 +6,121 @@ from fastapi import Depends
 from app.core.database import get_db
 from sqlalchemy import func
 from datetime import datetime
+from firebase import db
+from datetime import datetime
+from fastapi import HTTPException
 
-async def get_all_cash(db: AsyncSession, cash_type: str = None, is_active: str = 'True') -> list[Cash]:
-    
-    stmt = (
-        select(Cash)
-        .where(Cash.deleted_at.is_(None))
-        .order_by(Cash.cash_type.asc())
-        .order_by(Cash.created_at.desc())
-    )
+def get_all_cash(cash_type: str = None, is_active: str = "True") -> list[Cash]:
+    try:
+        ref = db.collection("cash").where("deleted_at", "==", None)
 
-    match is_active:
-        case 'True':
-            stmt = stmt.where(Cash.is_active.is_(True))
-        case 'False':
-            stmt = stmt.where(Cash.is_active.is_(False))
-        case 'all':
-            pass  # no filter
-    
-    if cash_type:
-        stmt = stmt.where(Cash.cash_type == cash_type)
+        query = ref
+        if is_active == "True":
+            query = query.where("is_active", "==", True)
+        elif is_active == "False":
+            query = query.where("is_active", "==", False)
+
+        if cash_type:
+            query = query.where("cash_type", "==", cash_type)
+
+        query = query.order_by("cash_type").order_by("cash")
         
-    result = await db.execute(stmt)
-    return result.scalars().all()
+        docs = query.stream()
 
-async def create_cash(
-    req: CashCreate,
-    db: AsyncSession = Depends(get_db)
-):
-    new_cash = Cash(
-        cash_type=req.cash_type,
-        cash=req.cash,
-        stock=req.stock,
-        is_active=req.is_active
-    )
-    db.add(new_cash)
-    await db.commit()
-    await db.refresh(new_cash)
+        return [
+            {**doc.to_dict(), "id": doc.id}
+            for doc in docs
+        ]
 
-    return new_cash
+    except Exception as e:
+        print("Firestore error:", e)
+        return []
+
+async def create_cash(req: CashCreate):
+    try:
+        data = {
+            "cash_type": req.cash_type,
+            "cash": req.cash,
+            "stock": req.stock,
+            "is_active": req.is_active,
+            "deleted_at": None,
+            "created_at": datetime.utcnow()
+        }
+
+        # เพิ่ม document ใหม่แบบ auto-id
+        doc_ref = db.collection("cash").document()
+        doc_ref.set(data)
+
+        # ดึงข้อมูลกลับมา (คล้าย refresh)
+        doc = doc_ref.get()
+        return {**doc.to_dict(), "id": doc.id}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def update_cash(
-    cash_id: int,
+    cash_id: str,   # ใช้ string เพราะ Firestore doc id เป็น string
     req: CashUpdate,
-    db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(Cash)
-        .where(Cash.id == cash_id)
-    )
-    cash = result.scalar_one_or_none()
-    if not cash:
-        raise CashNotFound()
-    cash.cash_type = req.cash_type
-    cash.cash = req.cash
-    cash.stock = req.stock
-    cash.is_active = req.is_active
+    doc_ref = db.collection("cash").document(cash_id)
+    snapshot = doc_ref.get()
 
-    await db.commit()
-    await db.refresh(cash)
+    if not snapshot.exists:
+        raise HTTPException(status_code=404, detail="Cash not found")
 
-    return cash
+    update_data = {
+        "cash_type": req.cash_type,
+        "cash": req.cash,
+        "stock": req.stock,
+        "is_active": req.is_active,
+    }
+
+    doc_ref.update(update_data)
+
+    # อ่านข้อมูลหลังอัปเดตกลับไปให้ client
+    updated_doc = doc_ref.get()
+    return updated_doc.to_dict() | {"id": doc_ref.id}
+
 
 async def soft_delete_cash(
-    cash_id: int,
-    db: AsyncSession = Depends(get_db)
+    cash_id: str,
 ):
-    result = await db.execute(
-        select(Cash)
-        .where(Cash.id == cash_id)
-    )
-    cash = result.scalar_one_or_none()
-    
-    if not cash:
-        raise CashNotFound()
-    
-    cash.deleted_at = datetime.utcnow()
-
-    await db.commit()
-    await db.refresh(cash)
-
-    return cash
+    doc_ref = db.collection("cash").document(cash_id)
+    snapshot = doc_ref.get()
+    if not snapshot.exists:
+        raise HTTPException(status_code=404, detail="Cash not found")
+    doc_ref.update({
+        "deleted_at": datetime.utcnow()
+    })
+    deleted_doc = doc_ref.get()
+    return deleted_doc.to_dict() | {"id": doc_ref.id}
 
 async def update_stock_cash(
-    cash_updates: list[dict],
-    db: AsyncSession
+    cash_updates: list[dict]
 ):
-    updated_records = []
-    for update in cash_updates:
-        stmt = (
-            select(Cash)
-            .where(
-                Cash.is_active.is_(True),
-                Cash.deleted_at.is_(None)
-            )
-        )
-        
-        if 'cash_id' in update:
-            stmt = stmt.where(Cash.id == update['cash_id'])
-        elif 'cash_type' in update and 'cash_value' in update:
-            stmt = stmt.where(Cash.cash_type == update['cash_type'], Cash.cash == update['cash_value'])
-            
-        result = await db.execute(stmt)
-        cash_record = result.scalar_one_or_none()
-        if cash_record:
-            if update['is_deduct']:
-                cash_record.stock -= update['quantity']
-            else:
-                cash_record.stock += update['quantity']
-            db.add(cash_record)
-            updated_records.append(cash_record)
+    try:
+        batch = db.batch()
 
-    await db.commit()
-    return updated_records
+        for update in cash_updates:
+            cash_id = update.get("cash_id")
+            quantity = update.get("quantity")
+            is_deduct = update.get("is_deduct", True)
+
+            doc_ref = db.collection("cash").document(cash_id)
+            snapshot = doc_ref.get()
+
+            if not snapshot.exists:
+                continue  # ข้ามถ้าไม่พบเอกสาร
+
+            current_stock = snapshot.get("stock") or 0
+            new_stock = current_stock - quantity if is_deduct else current_stock + quantity
+
+            batch.update(doc_ref, {"stock": new_stock})
+
+        batch.commit()
+        return True
+
+    except Exception as e:
+        print("Error updating stock:", e)
+        return False
 

@@ -5,18 +5,16 @@ from app.repositories.cash import update_stock_cash, get_all_cash
 from app.repositories.orders import create_order
 from app.repositories.order_detail import create_order_detail
 from app.schemas.order_detail import OrderDetailCreate
-from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.helpers import calculate_change, prepare_req_update_cashes_stock
 
 async def buy_product_service(
     req: BuyProductRequest,
-    db: AsyncSession
 ) -> BuyProductResponse:
 
     totalPaid = 0
     reqUpdateCashStock = {}
 
-    cashes = await get_all_cash(db, cash_type=None)
+    cashes = await get_all_cash(cash_type=None)
     if not cashes:
         raise ErrorResponse("No cash available in the system.")
 
@@ -34,7 +32,7 @@ async def buy_product_service(
 
     totalAmount = 0
     for item in req.product:
-        resProduct = await get_product_by_id(item.id, db)
+        resProduct = await get_product_by_id(item.id)
         if not resProduct:
             raise ErrorResponse(f"Product with id {item.id} not found.")
         if resProduct.stock < item.quantity:
@@ -47,18 +45,18 @@ async def buy_product_service(
 
     # update stock cash from paid amount
     cashUpdates = await prepare_req_update_cashes_stock(reqUpdateCashStock, is_deduct=False)
-    await update_stock_cash(cashUpdates, db)
+    await update_stock_cash(cashUpdates)
 
     # calculate change
-    resChange = await calculate_change(cashes, totalPaid, totalAmount, db)
+    resChange = await calculate_change(cashes, totalPaid, totalAmount)
     if resChange["status"] is False:
         raise ErrorResponse(resChange["message"])
 
     # update stock cash for change given
     cashUpdates = await prepare_req_update_cashes_stock(resChange, is_deduct=True)
-    await update_stock_cash(cashUpdates, db)
+    await update_stock_cash(cashUpdates)
 
-    resCreateOrder = await create_order(totalAmount, db)
+    resCreateOrder = await create_order(totalAmount)
 
     # create order details and update product stock
     for product in req.product:
@@ -69,7 +67,7 @@ async def buy_product_service(
             total_price=product.quantity * product.price
         )
 
-        res = await create_order_detail(orderDetailReq, db=db)
+        res = await create_order_detail(orderDetailReq)
         if not res:
             raise ErrorResponse("Failed to create order detail")
 
@@ -78,13 +76,11 @@ async def buy_product_service(
             product_id=product.id,
             quantity=product.quantity,
             is_deduct=True,
-            db=db
         )
 
         if not res:
             raise ErrorResponse(f"Failed to update stock for product id {product.id}")
 
-    await db.commit()
 
     return {
         "total_price": totalAmount,

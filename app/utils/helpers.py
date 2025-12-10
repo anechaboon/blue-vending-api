@@ -6,7 +6,7 @@ from app.repositories.cash import get_all_cash
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.cash import CashType, Cash
 
-async def calculate_change(cashes: list[Cash], amount_paid: float, total_price: float, db: AsyncSession):
+async def calculate_change(cashes: list[Cash], amount_paid: float, total_price: float):
     changeAmount = round(amount_paid - total_price, 2)
     if changeAmount < 0:
         return {
@@ -36,7 +36,7 @@ async def calculate_change(cashes: list[Cash], amount_paid: float, total_price: 
             COIN[str(cash_dict['cash'])] = 0
     
     
-    allCash = await get_all_cash(db, None)  # Need to pass db or call from route
+    allCash = await get_all_cash(None)  # Need to pass db or call from route
     for c in allCash:
         cash = c.__dict__
         if cash['cash'] == 1000:

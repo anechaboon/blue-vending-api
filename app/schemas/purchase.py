@@ -2,12 +2,12 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 
 class Product(BaseModel):
-    id: int
+    id: str
     quantity: int
     price: Optional[float] = 0.0
 
 class ProductItem(BaseModel):
-    id: int
+    id: str
     quantity: int
     price: Optional[float] = 0.0
     
@@ -18,7 +18,7 @@ class BuyProductRequest(BaseModel):
     COIN: Dict[str, int]
 
 class BuyProductResponse(BaseModel):
-    product_id: int
+    product_id: str
     quantity: int
     total_price: float
     change_bill: Dict[str, int]

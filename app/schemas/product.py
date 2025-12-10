@@ -4,7 +4,7 @@ from fastapi import UploadFile, File
 from app.schemas.base import BaseResponse
 
 class ProductItem(BaseModel):
-    id: int
+    id: str
     title: str
     price: float
     stock: int
@@ -20,7 +20,7 @@ class ProductListResponse(BaseResponse):
     data: List[ProductItem]
     
 class UpdateStockRequest(BaseModel):
-    product_id: int
+    product_id: str
     quantity: int
     is_deduct: bool
 

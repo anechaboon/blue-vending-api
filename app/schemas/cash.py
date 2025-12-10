@@ -15,7 +15,7 @@ class CashType(str, Enum):
     BILL = "BILL"
 
 class CashItem(BaseModel):
-    id: int
+    id: str
     cash_type: str
     cash: int
     stock: int
